@@ -1,0 +1,8 @@
+# ninja log v5
+0	34	1708880350537744516	CMakeFiles/util.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o	505427ee128cc3ec
+0	23	1708880767989062096	/home/william/Documents/INFO0403/Hypercube/hypercube	3ec5212c8b128823
+0	41	1708880350541744472	CMakeFiles/util.dir/home/william/Documents/INFO0403/Hypercube/sommet.c.o	24b55943c951552d
+0	41	1708880350541744472	CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o	f0006525ef5e6ed6
+0	42	1708880350541744472	CMakeFiles/util.dir/home/william/Documents/INFO0403/Hypercube/token.c.o	f54e985768990fec
+42	50	1708880350553744341	libutil.a	ca6092c20bc4fd8c
+0	21	1708880586311123916	hypercube	3bdac81fd048f6dd

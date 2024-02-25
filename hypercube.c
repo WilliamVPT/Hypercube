@@ -1,31 +1,14 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <math.h>
+#include <signal.h>
+#include <time.h>
+#include <sys/select.h>
+#include <fcntl.h>
 
-typedef struct sommet{
-    pid_t pid;
-    int etiq;//identité du sommet
-    int pipefd[2];
-    int nb_adj;//nombre de sommetd adjacents
-    int* adj;//tab des adjacents
-}sommet;
-
-//intialise le type sommet
-void init_sommet(sommet *s, int etiq, int n){
-    s->etiq = etiq;
-    s->nb_adj = 0;
-    pipe(s->pipefd);
-    s->adj = (int *)malloc(pow(2,n) * sizeof(int));//tableau de la taille max des processus qui seront créer
-}
-
-//ajout un sommet dans le tableau des adjacent d'un sommet
-void add_adj(sommet *s, int adjacent) {
-    s->adj[s->nb_adj++] = adjacent;
-}
-
+#include "token.c"
 
 int main(int argc, char* argv[]){
     if (argc != 2) {
@@ -48,23 +31,51 @@ int main(int argc, char* argv[]){
             }
         }
     }
-    /* //affichage des sommets et des adjacents
-    for(int i = 0; i<pow(2, n); i++){
-        printf("Sommet : %d\n", sommets[i].etiq);
-        int j = 0;
-        while(j<=pow(2, n) && sommets[i].adj[j]){
-            printf("Sommet adj : %d\n", sommets[i].adj[j]);
-            j++;
-        }
-    }*/
 
-    free(sommets);
+    // Lancement des processus et du token
+    for (int i = 0; i < pow(2, n); i++) {
+        Token(&sommets[i]);
+    }
+
+    int pause = 0; // Flag pour indiquer l'état de pause du processus principal
+    printf("Entrez s pour suspendre, r pour reprendre et q pour arrêter\n");
+    char touche;
+    while (1) {
+        touche = getchar();
+        getchar(); // Vider le buffer d'entrée
+        switch (touche) {
+            case 's':
+                // Suspendre le processus principal
+                if (!pause) {
+                    printf("Processus suspendu. Appuyez sur 'r' pour reprendre.\n");
+                    pause = 1;
+                }
+                break;
+            case 'r':
+                // Reprendre le processus principal
+                if (pause) {
+                    printf("Processus repris.\n");
+                    pause = 0;
+                }
+                break;
+            case 'q':
+                // Quitter le programme
+                printf("Arrêt du programme.\n");
+                exit(EXIT_SUCCESS);
+                break;
+            default:
+                // Touche non reconnue
+                printf("Touche non reconnue : %c\n", touche);
+                break;
+        }
+    }
 
     for(int i = 0; i<pow(2, n); i++){
         free(sommets[i].adj);
     }
-    
-    
 
+    free(sommets);
+
+    
     return EXIT_SUCCESS;
 }
