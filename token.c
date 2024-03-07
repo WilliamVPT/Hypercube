@@ -14,7 +14,7 @@
 
 #define BUFFER_SIZE 100
 
-void Token(sommet *s, sommet *adjacents, int nb_adjacents) {
+void Token(sommet *s, sommet *adjacents, int nb_adjacents, int pause_execution) {
     pid_t pid;
     pid = fork();
     if (pid == 0) {
@@ -53,12 +53,18 @@ void Token(sommet *s, sommet *adjacents, int nb_adjacents) {
                 // envoi le token à un sommet adjacent au hasard
                 int rand_index = rand() % nb_adjacents;
                 sommet adj = adjacents[rand_index];
+                
+                // Vérifier si le processus doit être en pause
+                while (pause_execution) {
+                    sleep(1); // Attendre 1 seconde avant de vérifier à nouveau
+                }
+
                 if (Log != -1) {
                     close(Log); // Fermer le fichier de log si nécessaire
                     Log = -1; // Réinitialiser le descripteur de fichier
                 }
                 // Appel récursif de Token avec le sommet adjacent
-                Token(&adj, adjacents, nb_adjacents);
+                Token(&adj, adjacents, nb_adjacents, pause_execution);
             }
         }
         // Sortir du processus fils si nécessaire
