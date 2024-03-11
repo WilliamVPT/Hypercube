@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <semaphore.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
@@ -14,19 +15,27 @@
 
 #define BUFFER_SIZE 100
 
-void Token(sommet *s, sommet *adjacents, int nb_adjacents, int pause_execution) {
+// Définir une structure pour stocker la valeur de pause_execution et un sémaphore pour protéger l'accès à la variable
+typedef struct {
+    int pause_execution;
+    sem_t sem;
+} shared_data;
+
+shared_data *shared;
+
+void Token(sommet *s, sommet *adjacents, int nb_adjacents) {
     pid_t pid;
     pid = fork();
     if (pid == 0) {
         // processus fils
         close(s->pipefd[0]);
         char filename[10];
-        sprintf(filename, "%d", s->etiq);
+        sprintf(filename, "process_%d", s->etiq);
         int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         int Log = -1; // Initialiser à -1 pour indiquer que le descripteur de fichier n'est pas encore ouvert
-        while (1) {
+        while (!shared->pause_execution) {
             if (Log == -1) {
-                if ((Log = open("Log", O_WRONLY | O_CREAT | O_APPEND, 0644)) == -1) {
+                if ((Log = open("process_Log", O_WRONLY | O_CREAT | O_APPEND, 0644)) == -1) {
                     perror("Erreur lors de l'ouverture du fichier de log");
                     exit(EXIT_FAILURE);
                 }
@@ -49,22 +58,25 @@ void Token(sommet *s, sommet *adjacents, int nb_adjacents, int pause_execution) 
                 strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", timeinfo);
                 char message[BUFFER_SIZE];
                 sprintf(message, "%s: Token reçu à %d\n", timestamp, s->etiq);
+                // Vérifier si le processus doit être en pause avant d'écrire dans le fichier de log
+                
                 write(Log, message, strlen(message)); // Écriture dans le fichier de log
-                // envoi le token à un sommet adjacent au hasard
-                int rand_index = rand() % nb_adjacents;
-                sommet adj = adjacents[rand_index];
                 
                 // Vérifier si le processus doit être en pause
-                while (pause_execution) {
-                    sleep(1); // Attendre 1 seconde avant de vérifier à nouveau
-                }
+               
+
+                // Envoyer le token à un sommet adjacent au hasard
+                int rand_index = rand() % nb_adjacents;
+                sommet adj = adjacents[rand_index];
 
                 if (Log != -1) {
                     close(Log); // Fermer le fichier de log si nécessaire
                     Log = -1; // Réinitialiser le descripteur de fichier
                 }
+
                 // Appel récursif de Token avec le sommet adjacent
-                Token(&adj, adjacents, nb_adjacents, pause_execution);
+                Token(&adj, adjacents, nb_adjacents);
+
             }
         }
         // Sortir du processus fils si nécessaire

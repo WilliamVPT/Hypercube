@@ -81,7 +81,7 @@ build libutil.a: C_STATIC_LIBRARY_LINKER__util_ CMakeFiles/util.dir/home/william
 #############################################
 # Order-only phony target for hypercube
 
-build cmake_object_order_depends_target_hypercube: phony || cmake_object_order_depends_target_util
+build cmake_object_order_depends_target_hypercube: phony || cmake_object_order_depends_target_util delete_files_target
 
 build CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o: C_COMPILER__hypercube_ /home/william/Documents/INFO0403/Hypercube/hypercube.c || cmake_object_order_depends_target_hypercube
   DEP_FILE = CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o.d
@@ -96,13 +96,19 @@ build CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercu
 #############################################
 # Link the executable /home/william/Documents/INFO0403/Hypercube/hypercube
 
-build /home/william/Documents/INFO0403/Hypercube/hypercube: C_EXECUTABLE_LINKER__hypercube_ CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o | libutil.a || libutil.a
+build /home/william/Documents/INFO0403/Hypercube/hypercube: C_EXECUTABLE_LINKER__hypercube_ CMakeFiles/hypercube.dir/home/william/Documents/INFO0403/Hypercube/hypercube.c.o | libutil.a || delete_files_target libutil.a
   LINK_LIBRARIES = libutil.a  -lm
   OBJECT_DIR = CMakeFiles/hypercube.dir
   POST_BUILD = :
   PRE_LINK = :
   TARGET_FILE = /home/william/Documents/INFO0403/Hypercube/hypercube
   TARGET_PDB = hypercube.dbg
+
+
+#############################################
+# Utility command for delete_files_target
+
+build delete_files_target: phony CMakeFiles/delete_files_target
 
 
 #############################################
@@ -126,6 +132,14 @@ build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
   restat = 1
 
 build rebuild_cache: phony CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Custom command for CMakeFiles/delete_files_target
+
+build CMakeFiles/delete_files_target | ${cmake_ninja_workdir}CMakeFiles/delete_files_target: CUSTOM_COMMAND
+  COMMAND = cd /home/william/Documents/INFO0403/Hypercube/build && /usr/bin/cmake -E cmake_echo_color --cyan Suppression\ des\ fichiers\ spécifiés && /usr/bin/cmake -P /home/william/Documents/INFO0403/Hypercube/build/delete_files.cmake
+  DESC = Supprimer les fichiers spécifiés
 
 # =============================================================================
 # Target aliases.

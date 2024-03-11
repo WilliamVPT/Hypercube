@@ -1,3 +1,12 @@
+#define BUFFER_SIZE 100
+
+#define _GNU_SOURCE
+#include <sys/mman.h>
+
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,6 +18,8 @@
 #include <time.h>
 #include <sys/select.h>
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 #include "token.c"
 
@@ -16,45 +27,54 @@ int pause_execution = 0;
 pid_t main_pid;
 int n;
 sommet *sommets;
+shared_data *shared;
 
 void appel_SIGSTOP() {
-    pause_execution = 1;
-    for(int i = 0; i<pow(2,n); i++){
-        if(sommets[i].pid>0){
+    // Verrouiller le sémaphore avant de modifier la valeur de pause_execution
+    sem_wait(&shared->sem);
+    shared->pause_execution = 1;
+    sem_post(&shared->sem);
+    for(int i = 0; i < pow(2, n); i++){
+        if(sommets[i].pid > 0){
             kill(sommets[i].pid, SIGSTOP);
         }
     }
 }
 
 void appel_SIGCONT() {
-    pause_execution = 0;
-    for(int i = 0; i<pow(2,n); i++){
-        if(sommets[i].pid>0){
+    // Verrouiller le sémaphore avant de modifier la valeur de pause_execution
+    sem_wait(&shared->sem);
+    shared->pause_execution = 0;
+    sem_post(&shared->sem);
+    for(int i = 0; i < pow(2, n); i++){
+        if(sommets[i].pid > 0){
             kill(sommets[i].pid, SIGCONT);
         }
     }
 }
 
 void appel_SIGQUIT() {
-    for(int i = 0; i<pow(2,n); i++){
-        if(sommets[i].pid>0){
+    for(int i = 0; i < pow(2, n); i++){
+        if(sommets[i].pid > 0){
             kill(sommets[i].pid, SIGQUIT);
         }
     }
     exit(EXIT_SUCCESS);
 }
 
-void token_process(int n, sommet *sommets) {
-    // Lancement des processus et du token
-    Token(&sommets[0], sommets, pow(2, n), pause_execution);
-}
 
 int main(int argc, char* argv[]) {
-    signal(SIGUSR1, appel_SIGSTOP);
-    signal(SIGUSR2, appel_SIGCONT);
+    signal(SIGSTOP, appel_SIGSTOP);
+    signal(SIGCONT, appel_SIGCONT);
     signal(SIGQUIT, appel_SIGQUIT);
 
+    shared = mmap(NULL, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+    shared->pause_execution = 0;
+    sem_init(&shared->sem, 1, 1);
+
     main_pid = getpid(); // Obtenir le PID du processus principal
+
+    setpgid(0, 0);
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <dimension de l'hypercube>\n", argv[0]);
@@ -80,11 +100,11 @@ int main(int argc, char* argv[]) {
     pid_t token_pid = fork();
     if (token_pid == 0) {
         // Processus enfant pour exécuter Token
-        token_process(n, sommets);
+        Token(&(sommets[0]), sommets, pow(2, n));
         exit(EXIT_SUCCESS);
     } else if (token_pid > 0) {
         // Processus parent
-        printf("Entrez s pour suspendre, r pour reprendre et q pour arrêter\n");
+        printf("Entrez s pour suspendre ou q pour arrêter\n");
 
         fd_set fds;
         struct timeval tv;
@@ -111,17 +131,20 @@ int main(int argc, char* argv[]) {
                         case 's':
                             // Suspendre les processus fils
                             appel_SIGSTOP();
+                            kill(token_pid, SIGSTOP);
                             printf("Signal SIGSTOP reçu. Processus suspendus. Appuyez sur 'q' pour arrêter ou 'r' pour reprendre.\n");
                             break;
                         case 'r':
                             // Reprendre le processus principal
                             appel_SIGCONT();
+                            kill(token_pid, SIGCONT);
+                            Token(&(sommets[0]), sommets, pow(2, n));
                             printf("Signal SIGCONT reçu. Processus repris. Appuyez sur 'q' pour arrêter ou 's' pour suspendre.\n");
                             break;
                         case 'q':
                             // Quitter le programme
-                            appel_SIGQUIT();
                             printf("Arrêt du programme.\n");
+                            execl("/usr/bin/pkill", "pkill", "hypercube", NULL);
                             break;
                         default:
                             // Touche non reconnue
@@ -139,6 +162,8 @@ int main(int argc, char* argv[]) {
         }
 
         free(sommets);
+        munmap(shared, sizeof(shared_data));
+        sem_destroy(&shared->sem);
 
         return EXIT_SUCCESS;
     } else {

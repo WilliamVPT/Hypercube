@@ -9,6 +9,7 @@ set(SOURCES
     ../hypercube.c
 )
 
+
 add_library(util STATIC ${SOURCES})
 
 add_executable(hypercube ${EXECUTABLE_OUTPUT_PATH} ../hypercube.c)
