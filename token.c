@@ -40,7 +40,6 @@ void Token(sommet *s, sommet *adjacents, int nb_adjacents) {
                     exit(EXIT_FAILURE);
                 }
             }
-            // Wait for the token
             fd_set readfds;
             FD_ZERO(&readfds);
             FD_SET(s->pipefd[0], &readfds);
@@ -62,7 +61,6 @@ void Token(sommet *s, sommet *adjacents, int nb_adjacents) {
                 
                 write(Log, message, strlen(message)); // Écriture dans le fichier de log
                 
-                // Vérifier si le processus doit être en pause
                
 
                 // Envoyer le token à un sommet adjacent au hasard
